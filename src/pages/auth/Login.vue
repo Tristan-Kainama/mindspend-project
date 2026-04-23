@@ -140,6 +140,25 @@ const handleLogin = async () => {
     >
       Sign Up
     </p>
+
+    <!-- Dummy content to enable scrolling -->
+    <div class="absolute mt-8 space-y-4 top-[800px] left-[35px] w-[361px]">
+      <div class="bg-gray-200 p-4 rounded-2xl">
+        <p class="text-gray-700">Dummy content 1</p>
+      </div>
+      <div class="bg-gray-200 p-4 rounded-2xl">
+        <p class="text-gray-700">Dummy content 2</p>
+      </div>
+      <div class="bg-gray-200 p-4 rounded-2xl">
+        <p class="text-gray-700">Dummy content 3</p>
+      </div>
+      <div class="bg-gray-200 p-4 rounded-2xl">
+        <p class="text-gray-700">Dummy content 4</p>
+      </div>
+      <div class="bg-gray-200 p-4 rounded-2xl">
+        <p class="text-gray-700">Dummy content 5</p>
+      </div>
+    </div>
   </div>
 </template>
 

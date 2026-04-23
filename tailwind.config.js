@@ -1,4 +1,4 @@
-/** @type {import('tailwindcss').Config} */
+// tailwind.config.js
 export default {
   content: [
     "./index.html",
@@ -6,8 +6,10 @@ export default {
   ],
   theme: {
     extend: {
-      fontFamily: {
-        geologica: ['Geologica', 'sans-serif'],
+      // ADD THIS SECTION:
+      borderRadius: {
+        '3xl': '24px', // Standard for the cards
+        '5xl': '40px', // Custom for the blue header
       },
     },
   },

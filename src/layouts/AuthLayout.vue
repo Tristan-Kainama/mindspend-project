@@ -8,7 +8,7 @@
     <div class="w-[430px] h-[932px] bg-white relative overflow-hidden">
 
       <!-- CONTENT -->
-      <div class="h-full overflow-y-auto">
+      <div class="h-full overflow-y-scroll">
         <router-view />
       </div>
 

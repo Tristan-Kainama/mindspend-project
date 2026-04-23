@@ -57,7 +57,7 @@ const closeSidebar = () => {
       </div>
 
       <!-- MAIN CONTENT -->
-      <div class="h-full overflow-y-auto">
+      <div class="h-full overflow-y-scroll">
         <router-view />
         <GlobalLoader />
       </div>

@@ -46,15 +46,10 @@ const fetchTransactions = async () => {
 const calculateSummary = () => {
   let income = 0
   let expense = 0
-
   transactions.value.forEach(t => {
-    if (t.type === 'income') {
-      income += t.amount
-    } else if (t.type === 'expense') {
-      expense += t.amount
-    }
+    if (t.type === 'income') income += t.amount
+    else if (t.type === 'expense') expense += t.amount
   })
-
   totalIncome.value = income
   totalExpense.value = expense
   balance.value = income - expense
@@ -66,8 +61,6 @@ const formatRupiah = (val) => {
 
 const isIncome = (t) => {
   if (t.type) return t.type === 'income'
-  
-  // fallback untuk data lama
   return ['Savings', 'Investment'].includes(t.category)
 }
 
@@ -75,9 +68,9 @@ onMounted(fetchTransactions)
 </script>
 
 <template>
-  <div class="bg-white relative w-full h-screen" data-name="Homepage">
-    <!-- Background Gradient Ellipse -->
-    <div class="absolute h-[578px] left-[-85px] top-[-173px] w-[600px]">
+  <div class="bg-white relative w-full h-screen overflow-y-auto overflow-x-hidden font-geologica" data-name="Homepage">
+    
+    <div class="absolute h-[578px] left-[-85px] top-[-173px] w-[600px] -z-0">
       <svg class="absolute block inset-0 size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 600 578">
         <ellipse cx="300" cy="289" fill="url(#paint0_linear_1_119)" id="Ellipse 1" rx="300" ry="289" />
         <defs>
@@ -89,106 +82,84 @@ onMounted(fetchTransactions)
       </svg>
     </div>
 
-    <!-- Header Text -->
-    <p class="absolute font-geologica font-normal leading-[normal] left-[130px] not-italic text-[16px] text-white top-[74px] whitespace-nowrap" style="font-variation-settings: 'CRSV' 0, 'SHRP' 0">
-      Good afternoon,
-    </p>
-    <p class="absolute font-geologica font-normal leading-[normal] left-[130px] not-italic text-[33.333px] text-white top-[101px] whitespace-nowrap" style="font-variation-settings: 'CRSV' 0, 'SHRP' 0">
-      {{ userName }}
-    </p>
-
-    <!-- Balance Card -->
-    <div class="absolute bg-gradient-to-t from-[#2678ff] h-[226px] left-[27px] rounded-[30px] to-[#00b0da] top-[179px] w-[376px]" />
-
-    <!-- Three Dots Menu -->
-    <div class="absolute left-[337px] size-[34px] top-[211px]" data-name="bi:three-dots">
-      <svg class="absolute block inset-0 size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 34 34">
-        <g id="bi:three-dots">
-          <path :d="svgPaths.p29441300" fill="white" id="Vector" />
-        </g>
-      </svg>
+    <div class="absolute left-[30px] top-[74px] text-white">
+      <p class="text-[16px] opacity-90">Good afternoon,</p>
+      <p class="text-[33px] font-bold leading-tight">Tristan</p>
     </div>
 
-    <!-- Arrow Icon -->
-    <div class="absolute flex h-[12.208px] items-center justify-center left-[152px] top-[221px] w-[24.104px]">
-      <div class="flex-none rotate-[-90.5deg]">
-        <div class="h-[24px] relative w-[12px]" data-name="weui:arrow-filled">
-          <svg class="absolute block inset-0 size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 12 24">
-            <g id="weui:arrow-filled">
-              <path clip-rule="evenodd" :d="svgPaths.p1093a180" fill="white" fill-rule="evenodd" id="Vector" />
-            </g>
-          </svg>
+    <div class="absolute top-[179px] left-[27px] right-[27px] h-[226px] bg-gradient-to-t from-[#2678ff] to-[#00b0da] rounded-[30px] shadow-lg p-6 text-white overflow-hidden">
+      
+      <div class="flex justify-between items-start">
+        <div class="rotate-[-90deg] w-6 h-6">
+           <svg fill="none" viewBox="0 0 12 24" class="w-full h-full">
+              <path clip-rule="evenodd" :d="svgPaths.p1093a180" fill="white" fill-rule="evenodd" />
+           </svg>
+        </div>
+        <div class="w-8 h-8">
+           <svg fill="none" viewBox="0 0 34 34" class="w-full h-full opacity-80">
+              <path :d="svgPaths.p29441300" fill="white" />
+           </svg>
+        </div>
+      </div>
+
+      <div class="mt-4">
+        <p class="text-[32px] font-bold leading-none">{{ formatRupiah(balance) }}</p>
+      </div>
+
+      <div class="flex justify-between mt-10 px-2">
+        <div class="text-left">
+          <p class="text-[14px] opacity-80 mb-1">Income</p>
+          <p class="text-[18px] font-bold">{{ formatRupiah(totalIncome) }}</p>
+        </div>
+        <div class="text-right">
+          <p class="text-[14px] opacity-80 mb-1">Expenses</p>
+          <p class="text-[18px] font-bold">{{ formatRupiah(totalExpense) }}</p>
         </div>
       </div>
     </div>
 
-    <!-- Balance Amount -->
-    <p class="absolute font-geologica font-bold leading-[normal] left-[57px] not-italic text-[32px] text-white top-[236px] whitespace-nowrap" style="font-variation-settings: 'CRSV' 0, 'SHRP' 0">
-      {{ formatRupiah(balance) }}
-    </p>
+    <div class="absolute top-[450px] left-[27px] right-[27px] flex justify-between items-center px-2">
+      <p class="font-bold text-[20px] text-black">Transactions History</p>
+      <p class="font-bold text-[#8c8a8a] text-[15px] cursor-pointer">See all</p>
+    </div>
 
-    <!-- Income Section -->
-    <p class="absolute font-geologica font-normal leading-[normal] left-[64px] not-italic text-[15px] text-white top-[336px] whitespace-nowrap" style="font-variation-settings: 'CRSV' 0, 'SHRP' 0">
-      Income
-    </p>
-    <p class="absolute font-geologica font-bold leading-[normal] left-[50px] not-italic text-[20px] text-white top-[355px] whitespace-nowrap" style="font-variation-settings: 'CRSV' 0, 'SHRP' 0">
-      {{ formatRupiah(totalIncome) }}
-    </p>
-
-    <!-- Expenses Section -->
-    <p class="absolute font-geologica font-normal leading-[normal] left-[284px] not-italic text-[15px] text-white top-[339px] whitespace-nowrap" style="font-variation-settings: 'CRSV' 0, 'SHRP' 0">
-      Expenses
-    </p>
-    <p class="absolute font-geologica font-bold leading-[normal] left-[270px] not-italic text-[20px] text-white top-[358px] whitespace-nowrap" style="font-variation-settings: 'CRSV' 0, 'SHRP' 0">
-      {{ formatRupiah(totalExpense) }}
-    </p>
-
-    <!-- Transactions History Header -->
-    <p class="absolute font-geologica font-bold leading-[normal] left-[33px] not-italic text-[20px] text-black top-[454px] whitespace-nowrap" style="font-variation-settings: 'CRSV' 0, 'SHRP' 0">
-      Transactions History
-    </p>
-    <p class="absolute font-geologica font-bold leading-[normal] left-[340px] not-italic text-[#8c8a8a] text-[15px] top-[457px] whitespace-nowrap" style="font-variation-settings: 'CRSV' 0, 'SHRP' 0">
-      See all
-    </p>
-
-    <!-- Transactions List - Dynamic from Supabase -->
-    <template v-if="transactions.length === 0">
-      <p class="absolute left-[33px] top-[510px] text-[#8c8a8a]">No transactions yet</p>
-    </template>
-    
-    <template v-for="(transaction, index) in transactions.slice(0, 5)" :key="transaction.id">
-      <!-- Transaction Background -->
-      <div :style="{ top: (508 + index * 77) + 'px' }" class="absolute bg-[#f1f1f1] h-[67px] left-[27px] rounded-[20px] w-[376px]" />
+    <div class="absolute left-[27px] top-[500px] right-[27px] flex flex-col gap-[12px] pb-10">
+      <template v-if="transactions.length === 0">
+        <p class="text-[#8c8a8a] text-center mt-10">No transactions yet</p>
+      </template>
       
-      <!-- Transaction Emoji -->
-      <div 
-        :style="{ top: (508 + index * 77) + 'px' }"
-        class="absolute left-[27px] w-[376px] h-[67px] flex items-center"
-      >
-        <div class="w-[50px] flex justify-center">
-          <span class="text-[26px]">
-            {{ emotionEmoji(transaction.emotion_category) }}
-          </span>
+      <template v-for="transaction in transactions.slice(0, 5)" :key="transaction.id">
+        <div class="bg-[#f1f1f1] h-[72px] rounded-[22px] flex items-center px-4 w-full">
+          
+          <div class="w-[48px] h-[48px] bg-white rounded-full flex items-center justify-center mr-4 flex-shrink-0 shadow-sm">
+            <span class="text-[24px]">{{ emotionEmoji(transaction.emotion_category) }}</span>
+          </div>
+
+          <div class="flex-grow flex flex-col justify-center min-w-0">
+            <p class="font-bold text-black text-[14px] truncate leading-none mb-1">
+              {{ transaction.category }}
+            </p>
+            <p class="text-[#8c8a8a] text-[12px] leading-none">
+              {{ new Date(transaction.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) }}
+            </p>
+          </div>
+
+          <div class="flex-shrink-0 ml-2">
+            <p :class="[isIncome(transaction) ? 'text-[#2c7d52]' : 'text-[#cb4f60]', 'font-bold text-[15px]']">
+              {{ isIncome(transaction) ? '+' : '-' }}{{ formatRupiah(transaction.amount).replace('Rp', '') }}
+            </p>
+          </div>
         </div>
-      </div>
-      
-      <!-- Transaction Date -->
-      <p :style="{ top: (529 + index * 77) + 'px' }" class="absolute font-geologica font-normal leading-[normal] left-[94px] not-italic text-[#8c8a8a] text-[13px] whitespace-nowrap" style="font-variation-settings: 'CRSV' 0, 'SHRP' 0">
-        {{ new Date(transaction.created_at).toLocaleDateString('id-ID', { year: 'numeric', month: 'short', day: 'numeric' }) }}
-      </p>
-      
-      <!-- Transaction Category -->
-      <p :style="{ top: (549 + index * 77) + 'px' }" class="absolute font-geologica font-normal leading-[normal] left-[94px] not-italic text-[#8c8a8a] text-[9.792px] whitespace-nowrap" style="font-variation-settings: 'CRSV' 0, 'SHRP' 0">
-        {{ transaction.category }}
-      </p>
-      
-      <!-- Transaction Amount -->
-      <p :style="{ top: (517 + index * 77) + 'px' }" :class="[isIncome(transaction) ? 'text-[#2c7d52]' : 'text-[#cb4f60]', 'absolute font-geologica font-bold leading-[normal] left-[293px] not-italic text-[16px] whitespace-nowrap']" style="font-variation-settings: 'CRSV' 0, 'SHRP' 0">
-        {{ isIncome(transaction) ? '+' : '-' }}{{ formatRupiah(transaction.amount) }}
-      </p>
-    </template>
+      </template>
+    </div>
+
   </div>
 </template>
 
 <style scoped>
+/* Tambahkan import font Geologica di App.vue atau main.css jika belum ada */
+.font-geologica {
+  font-family: 'Geologica', sans-serif;
+  font-variation-settings: 'CRSV' 0, 'SHRP' 0;
+}
 </style>

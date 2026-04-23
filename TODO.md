@@ -1,0 +1,1 @@
+# Task Progress: Report.vue Fixes Complete ✅\n\n- [x] Outer scrollbar removed (style.css)\n- [x] Report.vue inner scrollbar added (h-screen overflow-auto + spacer)\n- [x] Health graph centering improved (flex + removed offsets)\n- [x] Removed random bottom whitespace\n\nTest: http://localhost:5173/app/report – scroll works in frame, graph centered.
