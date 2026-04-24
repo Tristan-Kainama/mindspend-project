@@ -1,5 +1,5 @@
 # MindSpend Project
-This is a project i developed mostly with the help of AI for a workshop I'm attending at my campus called "CompeteMate GDGoC", for a brief summary, this is supposedly a fincancial tracking app that analyzes your financial decisions emotionally, this app in the hopes to help young generations that are going through college to save their money and not spend money impulsively, thank you :)
+This is a project i developed mostly with the help of AI for a workshop I'm attending at my campus called "CompeteMate GDGoC", this is a team project with two of my partners and also a general mentor, for a brief summary, this is supposedly a fincancial tracking app that analyzes your financial decisions emotionally, this app in the hopes to help young generations that are going through college to save their money and not spend money impulsively, thank you :)
 
 # Vue 3 + Vite
 
