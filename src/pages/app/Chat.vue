@@ -1,23 +1,15 @@
 <script setup>
 import { ref, nextTick } from 'vue'
 import { supabase } from '../../lib/supabase.js'
-import { parseWithAI } from '../../services/aiService'
-import { classifyEmotion } from '../../services/emotionClassifier'
 
+// STATE
 const message = ref('')
 const messages = ref([])
 const isLoading = ref(false)
 const chatContainer = ref(null)
-const fileInput = ref(null)
 
-const conversationHistory = ref([])
-
-const SYSTEM_PROMPT = `Kamu adalah MindSpend, financial assistant untuk anak muda usia 18-25 tahun.
-Tugasmu membantu mereka sadar dan bijak soal pengeluaran, terutama yang impulsif.
-Gaya bicara: santai, relate, kayak teman yang ngerti keuangan — bukan ceramah.
-Kalau user cerita tentang pengeluaran, tunjukkan empati dulu baru kasih insight.
-Ingat konteks percakapan sebelumnya dan refer ke sana kalau relevan.
-Jawab dalam Bahasa Indonesia, singkat dan padat (max 3-4 kalimat kecuali perlu penjelasan lebih).`
+// ID yang dikunci untuk keperluan preview agar sinkron dengan Profile
+const PREVIEW_USER_ID = '6d83e2d0-7379-4679-a062-4d2bfc1d7b8b'
 
 const scrollToBottom = async () => {
   await nextTick()
@@ -26,74 +18,98 @@ const scrollToBottom = async () => {
   }
 }
 
-const chatWithAI = async (userText) => {
-  const API_KEY = import.meta.env.VITE_GEMINI_API_KEY
-  if (!API_KEY) return 'API key belum diset.'
-
-  conversationHistory.value.push({
-    role: 'user',
-    parts: [{ text: userText }]
-  })
-
-  try {
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent?key=${API_KEY}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: conversationHistory.value,
-          generationConfig: { temperature: 0.8, maxOutputTokens: 500 }
-        })
-      }
-    )
-
-    if (!res.ok) {
-      conversationHistory.value.pop()
-      return `Ups, ada error. Coba lagi ya!`
-    }
-
-    const data = await res.json()
-    const aiText = data.candidates?.[0]?.content?.parts?.[0]?.text ?? 'Hmm, aku nggak dapat respons.'
-
-    conversationHistory.value.push({
-      role: 'model',
-      parts: [{ text: aiText }]
-    })
-
-    return aiText
-  } catch (err) {
-    console.error('Fetch error:', err)
-    conversationHistory.value.pop()
-    return 'Koneksi bermasalah.'
-  }
-}
-
+// LOGIKA HANDLE SEND (PREVIEW VERSION)
 const handleSend = async () => {
   if (!message.value.trim() || isLoading.value) return
 
-  isLoading.value = true
   const userText = message.value.trim()
-
   messages.value.push({ role: 'user', text: userText, type: 'chat' })
   message.value = ''
+  isLoading.value = true
   await scrollToBottom()
 
-  try {
-    const parsed = await parseWithAI(userText)
+  // Simulasi respons AI
+  setTimeout(async () => {
+    isLoading.value = false
+    
+    // SKENARIO 1: INPUT PENGELUARAN (STARBUCKS/KOPI)
+    if (userText.toLowerCase().includes('kopi') || userText.toLowerCase().includes('starbucks')) {
+      messages.value.push({ 
+        role: 'ai', 
+        type: 'expense', 
+        text: 'Oke, aku catat kopi Starbucks-nya ya. Ngopi emang enak buat nemenin gabut, tapi jangan lupa dicek budgetnya!',
+        data: {
+          amount: 35000,
+          category: 'Food & Drink',
+          emotion: 'Gabut',
+          emotion_category: 'Happy',
+          merchant: 'Starbucks'
+        }
+      })
+    } 
+    
+    // SKENARIO 2: MINTA INSIGHT (Format Baru yang Lebih Rapi & Profesional)
+    else if (userText.toLowerCase().includes('insight')) {
+      const insightText = `📊 **MINDSIGHT FINANCIAL REPORT**
+------------------------------------------
+💰 **Status Saldo**
+Kondisi kamu saat ini: **Healthy-Warning**.
+Estimasi sisa saldo: **Rp870.000**. Aman untuk minggu ini, tapi harus mulai "rem" menjelang akhir bulan.
 
-    if (parsed && parsed.amount > 0) {
-      conversationHistory.value.push({ role: 'user', parts: [{ text: userText }] })
-      messages.value.push({ role: 'ai', type: 'expense', text: 'Oke, aku tangkap pengeluaran ini ya:', data: parsed })
-    } else {
-      const aiReply = await chatWithAI(userText)
-      messages.value.push({ role: 'ai', text: aiReply, type: 'chat' })
+🧠 **Analisis Psikologi Belanja**
+• **Regret (25%):** Kamu sering merasa menyesal setelah belanja barang hobi (seperti Keyboard & Hoodie kemarin).
+• **Happy (45%):** Pengeluaran paling bikin kamu puas adalah kategori "Food & Drink".
+
+💡 **Rekomendasi MindSpend**
+Kurangi jajan kopi Rp35rb saat sedang "Gabut". Jika dikurangi 2x seminggu saja, kamu bisa hemat **Rp280.000** tambahan di akhir bulan. Lumayan banget buat dana darurat! 🚀`
+      
+      messages.value.push({ role: 'ai', text: insightText, type: 'insight' })
+    } 
+
+    else {
+      messages.value.push({ 
+        role: 'ai', 
+        text: 'Ada lagi yang mau kamu catat atau mau tanya soal analisis keuanganmu?', 
+        type: 'chat' 
+      })
+    }
+    
+    await scrollToBottom()
+  }, 1000)
+}
+
+// LOGIKA SIMPAN KE SUPABASE
+const saveData = async (data, msgIndex) => {
+  try {
+    const { error } = await supabase.from('transactions').insert([{
+      user_id: PREVIEW_USER_ID,
+      amount: data.amount,
+      category: data.category,
+      emotion: data.emotion,
+      emotion_category: data.emotion_category, 
+      type: 'expense',
+      merchant: data.merchant || 'Unknown',
+      created_at: new Date().toISOString()
+    }])
+
+    if (error) throw error
+
+    messages.value[msgIndex] = {
+      role: 'ai',
+      text: `Sip! Pengeluaran Rp${data.amount.toLocaleString()} sudah aman di database. Cek halaman Profile untuk lihat update grafiknya!`,
+      type: 'chat'
     }
   } catch (err) {
-    messages.value.push({ role: 'ai', text: 'Terjadi kesalahan.', type: 'chat' })
-  } finally {
-    isLoading.value = false
-    await scrollToBottom()
+    console.error("Error saving:", err)
+    messages.value.push({ role: 'ai', text: 'Gagal menyimpan data.', type: 'chat' })
+  }
+}
+
+const cancelSave = (msgIndex) => {
+  messages.value[msgIndex] = {
+    role: 'ai',
+    text: 'Oke, pengeluaran ini nggak aku catat ya.',
+    type: 'chat'
   }
 }
 
@@ -104,43 +120,19 @@ const handleKeydown = (e) => {
   }
 }
 
-const saveData = async (data, msgIndex) => {
-  try {
-    const { data: { user } } = await supabase.auth.getUser()
-    const emotionCategory = await classifyEmotion(data.emotion)
-
-    const { error } = await supabase.from('transactions').insert([{
-      user_id: user.id,
-      amount: data.amount,
-      category: data.category,
-      emotion: data.emotion,
-      emotion_category: emotionCategory, 
-      type: 'expense',
-      merchant: data.merchant || 'Unknown'
-    }])
-    if (error) throw error
-
-    messages.value[msgIndex] = {
-      role: 'ai',
-      text: `Pengeluaran Rp${data.amount.toLocaleString()} berhasil dicatat!`,
-      type: 'chat'
-    }
-  } catch (err) {
-    messages.value.push({ role: 'ai', text: 'Gagal menyimpan.', type: 'chat' })
-  }
-}
-
-const cancelSave = (msgIndex) => {
-  messages.value[msgIndex] = {
-    role: 'ai',
-    text: 'Oke, pengeluaran dibatalkan.',
-    type: 'chat'
-  }
-}
-
 const resetChat = () => {
   messages.value = []
-  conversationHistory.value = []
+}
+
+// Format insight text untuk display yang lebih rapi
+const formatInsightText = (text) => {
+  let html = text
+    // Ganti ** (bold) dengan <strong>
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    // Ganti line breaks dengan <br>
+    .split('\n').join('<br>')
+  
+  return html
 }
 </script>
 
@@ -158,9 +150,8 @@ const resetChat = () => {
           </defs>
         </svg>
       </div>
-
       <div class="header-content">
-        <h1 class="header-title">Hi, can I help you?</h1>
+        <h1 class="header-title">MindSpend AI</h1>
         <button class="header-dots" @click="resetChat">
           <span></span><span></span><span></span>
         </button>
@@ -171,7 +162,7 @@ const resetChat = () => {
       <div class="chat-messages" ref="chatContainer">
         <div v-if="messages.length === 0" class="msg-row msg-ai">
           <div class="bubble bubble-ai">
-            Halo! Kenalin, aku MindSpend, asisten keuangan yang nggak cuma peduli sama saldo rekeningmu, tapi juga ketenangan pikiranmu!
+            Halo! Aku asisten MindSpend. Ada pengeluaran yang ingin kamu catat hari ini?
           </div>
         </div>
 
@@ -181,10 +172,21 @@ const resetChat = () => {
           :class="['msg-row', msg.role === 'user' ? 'msg-user' : 'msg-ai']"
         >
           <div class="bubble-wrap">
-            <div :class="['bubble', msg.role === 'user' ? 'bubble-user' : 'bubble-ai']">
+            <!-- Regular chat message -->
+            <div v-if="msg.type === 'chat'" :class="['bubble', msg.role === 'user' ? 'bubble-user' : 'bubble-ai']">
+              {{ msg.text }}
+            </div>
+
+            <!-- Insight message dengan scrolling -->
+            <div v-else-if="msg.type === 'insight'" class="insight-bubble">
+              <div class="insight-content" v-html="formatInsightText(msg.text)"></div>
+            </div>
+
+            <!-- Expense message -->
+            <div v-else-if="msg.type === 'expense'" :class="['bubble', msg.role === 'user' ? 'bubble-user' : 'bubble-ai']">
               {{ msg.text }}
               
-              <div v-if="msg.type === 'expense'" class="expense-card">
+              <div class="expense-card">
                 <div class="expense-row"><span>Jumlah</span> <strong>Rp{{ msg.data.amount.toLocaleString() }}</strong></div>
                 <div class="expense-row"><span>Kategori</span> <strong>{{ msg.data.category }}</strong></div>
                 <div class="expense-row" v-if="msg.data.emotion"><span>Emosi</span> <span class="emotion-tag">{{ msg.data.emotion }}</span></div>
@@ -204,12 +206,10 @@ const resetChat = () => {
       </div>
 
       <div class="chat-input-area">
-        <input v-model="message" @keydown="handleKeydown" placeholder="Reply..." class="text-input" :disabled="isLoading" />
-        <button class="mic-btn">
+        <input v-model="message" @keydown="handleKeydown" placeholder="Ketik pesan..." class="text-input" :disabled="isLoading" />
+        <button class="mic-btn" @click="handleSend">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" fill="white"/>
-            <path d="M19 10v2a7 7 0 0 1-14 0v-2" stroke="white" stroke-width="2" stroke-linecap="round"/>
-            <line x1="12" y1="19" x2="12" y2="22" stroke="white" stroke-width="2" stroke-linecap="round"/>
+            <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" fill="white"/>
           </svg>
         </button>
       </div>
@@ -228,7 +228,8 @@ const resetChat = () => {
   max-width: 430px;
   margin: 0 auto;
   background: #fff;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .page-header {
@@ -260,20 +261,6 @@ const resetChat = () => {
   color: #fff;
 }
 
-.header-dots {
-  background: none;
-  border: none;
-  display: flex;
-  gap: 4px;
-}
-
-.header-dots span {
-  width: 6px;
-  height: 6px;
-  background: #fff;
-  border-radius: 50%;
-}
-
 .chat-card {
   flex: 1;
   background: #fff;
@@ -288,6 +275,7 @@ const resetChat = () => {
 .chat-messages {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 24px 20px;
   display: flex;
   flex-direction: column;
@@ -301,34 +289,95 @@ const resetChat = () => {
 .bubble {
   padding: 12px 16px;
   font-size: 14px;
-  line-height: 1.5;
-  background: #E8E8E8; /* Abu-abu sesuai gambar */
+  line-height: 1.6;
+  background: #F1F1F1;
   color: #222;
-  max-width: 100%;
+  max-width: 85%;
+  white-space: pre-wrap; /* Penting untuk format insight */
+  word-wrap: break-word;
 }
 
 .bubble-ai { border-radius: 18px 18px 18px 4px; }
-.bubble-user { border-radius: 18px 18px 4px 18px; }
+.bubble-user { border-radius: 18px 18px 4px 18px; background: #2678FF; color: #fff; }
+
+/* Styling untuk Insight Container */
+.insight-bubble {
+  background: linear-gradient(135deg, #f5f7ff 0%, #f0f8ff 100%);
+  border-radius: 18px 18px 18px 4px;
+  border: 1px solid #dde5ff;
+  padding: 16px;
+  max-width: 85%;
+  height: auto;
+  max-height: 400px;
+  min-height: 100px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #222;
+  box-shadow: 0 2px 8px rgba(38, 120, 255, 0.1);
+  display: block;
+}
+
+.insight-content {
+  word-wrap: break-word;
+  white-space: normal;
+  font-family: 'Geologica', sans-serif;
+  text-align: left;
+}
+
+.insight-content strong {
+  color: #1955d8;
+  font-weight: 600;
+}
+
+/* Custom scrollbar untuk insight */
+.insight-bubble::-webkit-scrollbar {
+  width: 6px;
+}
+
+.insight-bubble::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.insight-bubble::-webkit-scrollbar-thumb {
+  background: rgba(38, 120, 255, 0.3);
+  border-radius: 3px;
+}
+
+.insight-bubble::-webkit-scrollbar-thumb:hover {
+  background: rgba(38, 120, 255, 0.5);
+}
 
 .expense-card {
   margin-top: 10px;
   background: #fff;
   border-radius: 12px;
-  padding: 10px;
+  padding: 12px;
   border: 1px solid #ddd;
+  color: #333;
 }
 
 .expense-row {
   display: flex;
   justify-content: space-between;
   font-size: 12px;
-  margin-bottom: 4px;
+  margin-bottom: 6px;
+}
+
+.emotion-tag {
+  background: #E3F2FD;
+  color: #1976D2;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: bold;
 }
 
 .action-btns {
   display: flex;
   gap: 8px;
-  margin-top: 6px;
+  margin-top: 8px;
+  width: 85%;
 }
 
 .btn-save {
@@ -336,19 +385,21 @@ const resetChat = () => {
   background: #2678FF;
   color: #fff;
   border: none;
-  padding: 8px;
-  border-radius: 8px;
+  padding: 10px;
+  border-radius: 10px;
   font-weight: 600;
-  font-size: 12px;
+  font-size: 13px;
+  cursor: pointer;
 }
 
 .btn-cancel {
   flex: 1;
   background: #fff;
   border: 1px solid #ddd;
-  padding: 8px;
-  border-radius: 8px;
-  font-size: 12px;
+  padding: 10px;
+  border-radius: 10px;
+  font-size: 13px;
+  cursor: pointer;
 }
 
 .chat-input-area {
@@ -361,7 +412,7 @@ const resetChat = () => {
 
 .text-input {
   flex: 1;
-  background: #E8E8E8;
+  background: #F3F4F6;
   border: none;
   border-radius: 24px;
   padding: 12px 18px;
@@ -371,12 +422,13 @@ const resetChat = () => {
 .mic-btn {
   width: 44px;
   height: 44px;
-  background: #1A1A1A; /* Lingkaran gelap sesuai gambar */
+  background: #1A1A1A;
   border-radius: 50%;
   border: none;
   display: flex;
   align-items: center;
   justify-content: center;
+  cursor: pointer;
 }
 
 .typing span {

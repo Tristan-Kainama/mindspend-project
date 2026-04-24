@@ -88,7 +88,7 @@ const handleLogin = async () => {
 
     <!-- Subtitle -->
     <p class="absolute font-geologica font-normal h-[19px] leading-[normal] left-[114px] not-italic text-[12.664px] text-black top-[357px] w-[238px]" style="font-variation-settings: 'CRSV' 0, 'SHRP' 0">
-      Manage you money with emotions
+      Spend your money mindfully!
     </p>
 
     <!-- Email Label -->

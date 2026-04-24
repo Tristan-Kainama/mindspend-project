@@ -20,7 +20,7 @@ const closeSidebar = () => {
   <div class="relative min-h-screen bg-gray-100 flex justify-center">
 
     <!-- MOBILE FRAME -->
-    <div class="w-[430px] h-[932px] bg-white relative overflow-hidden">
+    <div class="w-[430px] h-[932px] bg-white relative overflow-y-auto">
 
       <!-- HAMBURGER BUTTON -->
       <div class="absolute top-2 left-6 z-20">
